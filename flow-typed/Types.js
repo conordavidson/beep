@@ -14,12 +14,13 @@ type SoundBank = {
   [soundId: string]: Sound
 };
 
-type Track = {
-  id: string,
-  name: string,
-  sequence: Array<boolean>
+type Sequence = Array<number>;
+
+type RhythmTrack = {
+  soundId: string,
+  sequence: Sequence
 };
 
-type Tracks = {
-  [soundId: string]: Track
+type RhythmTracks = {
+  [soundId: string]: RhythmTrack
 };

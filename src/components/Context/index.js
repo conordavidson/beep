@@ -1,7 +1,6 @@
 /* @flow */
 import React, { Component } from 'react';
 import DrumMachine from 'components/DrumMachine';
-import values from 'utils/values';
 
 type Props = {};
 type State = {
@@ -15,7 +14,7 @@ class Context extends Component<Props, State> {
   }
 
   state = { soundsLoaded: false };
-  audioContext: AudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  audioContext: AudioContext = new (AudioContext || window.webkitAudioContext)();
   soundFiles: Array<SoundFile> = [
     {
       id: 'hat',
