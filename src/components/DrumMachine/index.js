@@ -1,5 +1,6 @@
 /* @flow */
 import React, { Component } from 'react';
+import { SoundBankContext } from 'components/SoundBank';
 import objectValues from 'utils/objectValues';
 
 type Props = {
@@ -36,30 +37,28 @@ export default class DrumMachine extends Component<Props, State> {
   tracksAsArray = (): Array<RhythmTrack> => objectValues(this.state.tracks);
 
   render() {
-    return <Tracks tracks={this.tracksAsArray()} soundBank={this.props.soundBank} />;
+    return <Tracks tracks={this.tracksAsArray()} />;
   }
 }
 
 type TracksProps = {
-  tracks: Array<RhythmTrack>,
-  soundBank: SoundBank
+  tracks: Array<RhythmTrack>
 };
 
 class Tracks extends Component<TracksProps> {
   render() {
-    return this.props.tracks.map(track => <Track track={track} soundBank={this.props.soundBank} key={track.soundId} />);
+    return this.props.tracks.map(track => <Track track={track} key={track.soundId} />);
   }
 }
 
 type TrackProps = {
-  track: RhythmTrack,
-  soundBank: SoundBank
+  track: RhythmTrack
 };
 
 class Track extends Component<TrackProps> {
-  get soundName() {
-    return this.props.soundBank[this.props.track.soundId].name;
-  }
+  static contextType = SoundBankContext;
+  get soundBank() { return this.context };
+  get soundName() { return this.soundBank[this.props.track.soundId].name };
 
   render() {
     return (

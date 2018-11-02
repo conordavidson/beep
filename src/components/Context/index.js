@@ -1,5 +1,6 @@
 /* @flow */
 import React, { Component } from 'react';
+import { SoundBankProvider } from 'components/SoundBank';
 import DrumMachine from 'components/DrumMachine';
 
 type Props = {};
@@ -61,7 +62,9 @@ class Context extends Component<Props, State> {
   render() {
     if (!this.state.soundsLoaded) return null;
     return (
-      <DrumMachine playSound={this.playSound} soundBank={this.soundBank} />
+      <SoundBankProvider value={this.soundBank}>
+        <DrumMachine playSound={this.playSound} soundBank={this.soundBank} />
+      </SoundBankProvider>
     );
   }
 }
