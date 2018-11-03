@@ -51,7 +51,12 @@ class Context extends Component<Props, State> {
     this.soundBank[sound.id] = { id: sound.id, name: sound.name, buffer: sound.buffer };
   }
 
-  playSound = (buffer: AudioBuffer) => {
+  playSound = (soundId: string) => {
+    return this.playBuffer(this.soundBank[soundId].buffer);
+    // return source[source.start ? 'start' : 'noteOn'](time);
+  }
+
+  playBuffer = (buffer: AudioBuffer) => {
     const source = this.audioContext.createBufferSource();
     source.buffer = buffer;
     source.connect(this.audioContext.destination);

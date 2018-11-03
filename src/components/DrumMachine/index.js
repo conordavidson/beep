@@ -1,7 +1,49 @@
 /* @flow */
-import React, { Component } from 'react';
-import { SoundBankContext } from 'components/SoundBank';
+import React, { Component, createContext } from 'react';
+import { withSoundBank } from 'components/SoundBank';
 import objectValues from 'utils/objectValues';
+import cx from 'classnames';
+
+
+export const DrumMachineActionsContext = createContext({});
+export const DrumMachineActionsProvider = DrumMachineActionsContext.Provider;
+export const DrumMachineActionsConsumer = DrumMachineActionsContext.Consumer;
+export const withDrumMachineActions = WrappedComponent => {
+  class WithDrumMachineActionsComponent extends Component {
+    render() {
+      return (
+        <DrumMachineActionsConsumer>
+          {drumMachineActions => (
+            <WrappedComponent {...this.props} drumMachineActions={drumMachineActions} />
+          )}
+        </DrumMachineActionsConsumer>
+      );
+    }
+  }
+  return WithDrumMachineActionsComponent;
+};
+
+
+export const DrumMachineStateContext = createContext({});
+export const DrumMachineStateProvider = DrumMachineStateContext.Provider;
+export const DrumMachineStateConsumer = DrumMachineStateContext.Consumer;
+export const withDrumMachineState = WrappedComponent => {
+  class WithDrumMachineStateComponent extends Component {
+    render() {
+      return (
+        <DrumMachineStateConsumer>
+          {drumMachineState => (
+            <WrappedComponent {...this.props} drumMachineState={drumMachineState} />
+          )}
+        </DrumMachineStateConsumer>
+      );
+    }
+  }
+  return WithDrumMachineStateComponent;
+};
+
+
+
 
 type Props = {
   playSound: Function,
@@ -9,10 +51,11 @@ type Props = {
 };
 
 type State = {
-  stopped: boolean,
+  playing: boolean,
   bpm: number,
   tracks: RhythmTracks
 };
+
 
 export default class DrumMachine extends Component<Props, State> {
   SEQUENCE_LENGTH = 16;
@@ -29,17 +72,204 @@ export default class DrumMachine extends Component<Props, State> {
   };
 
   state = {
-    stopped: false,
+    playing: false,
     bpm: 120,
-    tracks: this.deriveTracksFromSoundBank()
+    tracks: this.deriveTracksFromSoundBank(),
+    noteIndex: 0
   };
 
-  tracksAsArray = (): Array<RhythmTrack> => objectValues(this.state.tracks);
+  get tracksAsArray(): Array<RhythmTrack> {
+    return objectValues(this.state.tracks);
+  }
+
+  setSequenceNote = (soundId: string, noteIndex: number, value: number) => {
+    const updatedSequence: Sequence = [...this.state.tracks[soundId].sequence];
+    updatedSequence[noteIndex] = value;
+
+    return this.setState({
+      tracks: {
+        ...this.state.tracks,
+        [soundId]: {
+          ...this.state.tracks[soundId],
+          sequence: updatedSequence
+        }
+      }
+    });
+  };
+
+  get beatsPerMillisecond() {
+    return 60000 / this.state.bpm;
+  }
+
+  play = () => {
+    if (this.state.playing) return;
+    this.setState(
+      {
+        playing: true
+      },
+      () => this.playNoteAt(0)
+    );
+  };
+
+  stop = () => {
+    if (!this.state.playing) return;
+    this.setState({
+      playing: false
+    });
+  };
+
+  playNoteAt(noteIndex) {
+    if (!this.state.playing) return;
+
+    this.tracksAsArray.forEach(track => {
+      if (track.sequence[noteIndex]) {
+        this.props.playSound(track.soundId);
+      }
+    });
+
+    this.setState({ noteIndex });
+
+    return setTimeout(() => {
+      return noteIndex === this.SEQUENCE_LENGTH - 1 ? this.playNoteAt(0) : this.playNoteAt(noteIndex + 1);
+    }, this.beatsPerMillisecond);
+  }
+
+  setBpm = bpm => {
+    return this.setState({ bpm });
+  };
 
   render() {
-    return <Tracks tracks={this.tracksAsArray()} />;
+    return (
+      <div className='text-center'>
+        <div className='border-gray p1_5 mt2 inline-block text-left'>
+          <DrumMachineStateProvider
+            value={{
+              playing: this.state.playing,
+              bpm: this.state.bpm,
+              noteIndex: this.state.noteIndex,
+            }}>
+            <DrumMachineActionsProvider
+              value={{
+                setSequenceNote: this.setSequenceNote,
+                play: this.play,
+                stop: this.stop,
+                setBpm: this.setBpm
+              }}>
+              <Header />
+              <Tracks tracks={this.tracksAsArray} />
+              <Controls />
+            </DrumMachineActionsProvider>
+          </DrumMachineStateProvider>
+        </div>
+      </div>
+    );
   }
 }
+
+
+
+
+type HeaderProps = {};
+
+class Header extends Component<HeaderProps> {
+  render() {
+    return (
+      <div className='flex justify-between mb2'>
+        <span className='uppercase'>Drum Machine</span>
+        <StatusIndicator />
+      </div>
+    );
+  }
+}
+
+
+
+
+type StatusIndicatorProps = {};
+
+class StatusIndicatorRaw extends Component<StatusIndicatorProps> {
+  render() {
+    const classes = cx('StatusIndicator', {
+      'StatusIndicator--active': this.props.drumMachineState.playing
+    });
+
+    // const animationDuration = `${1 / (this.props.drumMachineState.bpm / 60)}s`;
+
+    return (
+      <div className='StatusIndicator__Container'>
+        <div className={classes}>
+        </div>
+      </div>
+    )
+  }
+}
+
+const StatusIndicator = withDrumMachineState(StatusIndicatorRaw);
+
+
+type ControlsProps = {};
+
+class ControlsRaw extends Component<ControlsProps> {
+
+  renderPlayButton() {
+    const classes = cx('Button h100 mr_5', {
+     'drop-shadow': !this.props.drumMachineState.playing,
+     'inner-shadow': this.props.drumMachineState.playing
+    });
+    return (
+      <button className={classes} onClick={this.props.drumMachineActions.play}>play</button>
+    );
+  }
+
+  renderStopButton() {
+    const classes = cx('Button h100', {
+     'drop-shadow': this.props.drumMachineState.playing,
+     'inner-shadow': !this.props.drumMachineState.playing
+    });
+    return (
+      <button className={classes} onClick={this.props.drumMachineActions.stop}>stop</button>
+    );
+  }
+
+  render() {
+    return (
+      <div className='Controls flex justify-between mt2'>
+        <div className='mr2'>
+          {this.renderPlayButton()}
+          {this.renderStopButton()}
+        </div>
+        <div>
+          <BpmSelector onChange={this.props.drumMachineActions.setBpm} value={this.props.drumMachineState.bpm} />
+        </div>
+      </div>
+    );
+  }
+}
+
+const Controls = withDrumMachineState(withDrumMachineActions(ControlsRaw));
+
+
+
+
+type BpmSelectorProps = {};
+
+class BpmSelector extends Component<BpmSelectorProps> {
+  onChange = e => this.props.onChange(e.target.value);
+
+  render() {
+    return (
+      <div className='h100 relative'>
+        <input className='Input h100 inner-shadow' onChange={this.onChange} value={this.props.value} type="number" />
+        <span className='detail color-gray overlay events-none flex justify-end items-center pr2'>
+          BPM
+        </span>
+      </div>
+    )
+  }
+}
+
+
+
 
 type TracksProps = {
   tracks: Array<RhythmTrack>
@@ -47,51 +277,105 @@ type TracksProps = {
 
 class Tracks extends Component<TracksProps> {
   render() {
-    return this.props.tracks.map(track => <Track track={track} key={track.soundId} />);
+    return this.props.tracks.map(track => (
+      <Track track={track} />
+    ));
   }
 }
 
+
+
 type TrackProps = {
-  track: RhythmTrack
+  track: RhythmTrack,
+  soundBank: SoundBank,
+  drumMachineActions: {
+    setSequenceNote: Function
+  }
 };
 
-class Track extends Component<TrackProps> {
-  static contextType = SoundBankContext;
-  get soundBank() { return this.context };
-  get soundName() { return this.soundBank[this.props.track.soundId].name };
+class TrackRaw extends Component<TrackProps> {
+  get soundName() {
+    return this.props.soundBank[this.props.track.soundId].name;
+  }
+
+  onSequenceKeyClick = () => (noteIndex: number, value: number) => {
+    return this.props.drumMachineActions.setSequenceNote(this.props.track.soundId, noteIndex, value);
+  };
 
   render() {
     return (
-      <div>
-        <div>{this.soundName}</div>
-        <TrackSequence sequence={this.props.track.sequence} />
+      <div className='mb1_5'>
+        <div className='mb_5'>{this.soundName}</div>
+        <TrackSequence sequence={this.props.track.sequence} onClickKey={this.onSequenceKeyClick()} />
       </div>
     );
   }
 }
 
+const Track = withSoundBank(withDrumMachineActions(TrackRaw))
+
+
+
+
+
 type TrackSequenceProps = {
-  sequence: Sequence
+  sequence: Sequence,
+  onClickKey: Function
 };
 
 class TrackSequence extends Component<TrackSequenceProps> {
   render() {
     return (
-      <div className='flex'>
-        {this.props.sequence.map((sequenceKey, index) => (
-          <SequenceKey sequenceKey={sequenceKey} index={index} key={index} />
+      <div className="flex">
+        {this.props.sequence.map((note, index) => (
+          <SequenceKey note={note} index={index} key={index} onClick={this.props.onClickKey} />
         ))}
+      </div>
+    );
+  }
+}
+
+
+
+
+type SequenceKeyProps = {
+  note: number,
+  onClick: Function
+};
+
+class SequenceKeyRaw extends Component<SequenceKeyProps> {
+  onClick = () => {
+    const newNoteValue = this.props.note === 0 ? 1 : 0;
+    return this.props.onClick(this.props.index, newNoteValue);
+  }
+
+  get on() {
+    return this.props.note === 1 ? true : false;
+  }
+
+  get active() {
+    if (!this.props.drumMachineState.playing) return false;
+    return this.props.drumMachineState.noteIndex === this.props.index;
+  }
+
+  get classes() {
+    return cx('SequenceKey mr_5 border-radius', {
+      'drop-shadow': !this.on,
+      'inner-shadow': this.on,
+      'bg-color-white': !this.active,
+      'bg-color-light-gray': this.active
+    });
+  }
+
+  render() {
+    return (
+      <div
+        className={this.classes}
+        onClick={this.onClick}
+      >
       </div>
     )
   }
 }
 
-type SequenceKeyProps = {
-  sequenceKey: number
-};
-
-class SequenceKey extends Component<SequenceKeyProps> {
-  render() {
-    return <div>{this.props.sequenceKey}</div>;
-  }
-}
+const SequenceKey = withDrumMachineState(SequenceKeyRaw);

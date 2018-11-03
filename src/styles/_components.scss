@@ -1,0 +1,62 @@
+.Controls {
+  height: 40px;
+}
+
+.Button {
+  border-radius: 15px;
+  padding-right: 40px;
+  padding-left: 40px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  border: none;
+  transition: all 0.04s ease-in-out;
+  cursor: pointer;
+}
+
+.SequenceKey {
+  height: 50px;
+  width: 30px;
+  transition: all 0.07s ease-in-out;
+  cursor: pointer;
+}
+
+.Input {
+  border-radius: 15px;
+  font-size: 20px;
+  padding-left: 25px;
+  padding-right: 15px;
+  border: none;
+}
+
+.StatusIndicator__Container {
+  border: 1px solid color('gray');
+  width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+@keyframes statusBlink {
+  from {
+    background-color: color('light-gray');
+  }
+  to {
+    background-color: color('blue');
+  }
+}
+
+.StatusIndicator {
+  background-color: color('gray');
+  height: 100%;
+  width: 100%;
+  border-radius: 4px;
+
+  &--active {
+    animation-name: statusBlink;
+    animation-duration: 0.65s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: cubic-bezier(0.27, 0.76, 0.54, 0.91);
+  }
+}
