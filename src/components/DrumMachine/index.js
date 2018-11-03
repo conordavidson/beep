@@ -1,52 +1,19 @@
 /* @flow */
-import React, { Component, createContext } from 'react';
-import { withSoundBank } from 'components/SoundBank';
+import React, { Component } from 'react';
+import { withSoundBank } from 'components/SoundBank/SoundBankContext';
+import { withAudioContext } from 'components/Context/AudioContextContext';
+import {
+  DrumMachineActionsProvider,
+  DrumMachineStateProvider,
+  withDrumMachineActions,
+  withDrumMachineState
+} from 'components/DrumMachine/DrumMachineContext';
 import objectValues from 'utils/objectValues';
 import cx from 'classnames';
 
 
-export const DrumMachineActionsContext = createContext({});
-export const DrumMachineActionsProvider = DrumMachineActionsContext.Provider;
-export const DrumMachineActionsConsumer = DrumMachineActionsContext.Consumer;
-export const withDrumMachineActions = WrappedComponent => {
-  class WithDrumMachineActionsComponent extends Component {
-    render() {
-      return (
-        <DrumMachineActionsConsumer>
-          {drumMachineActions => (
-            <WrappedComponent {...this.props} drumMachineActions={drumMachineActions} />
-          )}
-        </DrumMachineActionsConsumer>
-      );
-    }
-  }
-  return WithDrumMachineActionsComponent;
-};
-
-
-export const DrumMachineStateContext = createContext({});
-export const DrumMachineStateProvider = DrumMachineStateContext.Provider;
-export const DrumMachineStateConsumer = DrumMachineStateContext.Consumer;
-export const withDrumMachineState = WrappedComponent => {
-  class WithDrumMachineStateComponent extends Component {
-    render() {
-      return (
-        <DrumMachineStateConsumer>
-          {drumMachineState => (
-            <WrappedComponent {...this.props} drumMachineState={drumMachineState} />
-          )}
-        </DrumMachineStateConsumer>
-      );
-    }
-  }
-  return WithDrumMachineStateComponent;
-};
-
-
-
-
 type Props = {
-  playSound: Function,
+  audioContext: Object,
   soundBank: SoundBank
 };
 
@@ -57,7 +24,7 @@ type State = {
 };
 
 
-export default class DrumMachine extends Component<Props, State> {
+class DrumMachine extends Component<Props, State> {
   SEQUENCE_LENGTH = 16;
 
   deriveTracksFromSoundBank = (): RhythmTracks => {
@@ -123,7 +90,7 @@ export default class DrumMachine extends Component<Props, State> {
 
     this.tracksAsArray.forEach(track => {
       if (track.sequence[noteIndex]) {
-        this.props.playSound(track.soundId);
+        this.props.audioContext.playSound(track.soundId);
       }
     });
 
@@ -166,7 +133,7 @@ export default class DrumMachine extends Component<Props, State> {
   }
 }
 
-
+export default withAudioContext(withSoundBank(DrumMachine));
 
 
 type HeaderProps = {};
