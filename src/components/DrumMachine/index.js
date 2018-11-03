@@ -107,27 +107,25 @@ class DrumMachine extends Component<Props, State> {
 
   render() {
     return (
-      <div className='text-center'>
-        <div className='border-gray p1_5 mt2 inline-block text-left'>
-          <DrumMachineStateProvider
+      <div className='border-gray p1_5 inline-block'>
+        <DrumMachineStateProvider
+          value={{
+            playing: this.state.playing,
+            bpm: this.state.bpm,
+            noteIndex: this.state.noteIndex,
+          }}>
+          <DrumMachineActionsProvider
             value={{
-              playing: this.state.playing,
-              bpm: this.state.bpm,
-              noteIndex: this.state.noteIndex,
+              setSequenceNote: this.setSequenceNote,
+              play: this.play,
+              stop: this.stop,
+              setBpm: this.setBpm
             }}>
-            <DrumMachineActionsProvider
-              value={{
-                setSequenceNote: this.setSequenceNote,
-                play: this.play,
-                stop: this.stop,
-                setBpm: this.setBpm
-              }}>
-              <Header />
-              <Tracks tracks={this.tracksAsArray} />
-              <Controls />
-            </DrumMachineActionsProvider>
-          </DrumMachineStateProvider>
-        </div>
+            <Header />
+            <Tracks tracks={this.tracksAsArray} />
+            <Controls />
+          </DrumMachineActionsProvider>
+        </DrumMachineStateProvider>
       </div>
     );
   }

@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { AudioContextProvider } from 'components/Context/AudioContextContext';
 import { SoundBankProvider } from 'components/SoundBank/SoundBankContext';
 import DrumMachine from 'components/DrumMachine';
+import Synthesizer from 'components/Synthesizer';
 
 type Props = {};
 type State = {
@@ -68,9 +69,19 @@ class Context extends Component<Props, State> {
   render() {
     if (!this.state.soundsLoaded) return null;
     return (
-      <AudioContextProvider value={{ playSound: this.playSound }}>
+      <AudioContextProvider value={{
+        playSound: this.playSound,
+        context: this.audioContext
+      }}>
         <SoundBankProvider value={this.soundBank}>
-          <DrumMachine />
+          <div className='flex justify-center mt4'>
+            <div className='mr2'>
+              <Synthesizer />
+            </div>
+            <div>
+              <DrumMachine />
+            </div>
+          </div>
         </SoundBankProvider>
       </AudioContextProvider>
     );
