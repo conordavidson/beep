@@ -12,7 +12,9 @@ const FSHARP = 'FHSARP';
 const G = 'G';
 const GSHARP = 'GSHARP';
 
-export const KeyboardMapping = {
+export const DEFAULT_OCTIVE_INDEX = 3;
+
+export const KeyCodeMapping = {
   [C]: 65,
   [CSHARP]: 87,
   [D]: 83,
@@ -517,7 +519,7 @@ export const Octaves = [
     },
     {
       note: ASHARP,
-      frequency: Frequencies.ASHAR6,
+      frequency: Frequencies.ASHARP6,
       sharp: true
     },
     {

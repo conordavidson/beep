@@ -243,7 +243,7 @@ type TracksProps = {
 class Tracks extends Component<TracksProps> {
   render() {
     return this.props.tracks.map(track => (
-      <Track track={track} />
+      <Track track={track} key={track.soundId} />
     ));
   }
 }

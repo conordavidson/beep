@@ -1,9 +1,15 @@
 /* @flow */
 import React, { Component } from 'react';
 import { withAudioContext } from 'components/Context/AudioContextContext';
-import { SynthesizerActionsProvider, withSynthesizerActions } from 'components/Synthesizer/SynthesizerContext';
+import {
+  SynthesizerActionsProvider,
+  SynthesizerStateProvider,
+  withSynthesizerActions,
+  withSynthesizerState
+} from 'components/Synthesizer/SynthesizerContext';
 import cx from 'classnames';
 import objectValues from 'utils/objectValues';
+import { Octaves, KeyCodeMapping, DEFAULT_OCTIVE_INDEX } from 'components/Synthesizer/Keyboard';
 
 class Synthesizer extends Component<SynthesizerProps> {
   constructor(props) {
@@ -11,150 +17,129 @@ class Synthesizer extends Component<SynthesizerProps> {
   }
 
   state = {
+    octaveIndex: DEFAULT_OCTIVE_INDEX,
     waveform: 'sine',
     keys: {}
   };
 
   componentDidMount() {
-    this.createKeyMap();
-    this.setKeys();
+    this.setEnabledKeys();
+    this.setOctaveKeys();
     this.bindKeyboardEvents();
   }
 
-  createKeyMap() {
-    this.keyMap = this.KEYS.map(key => key.trigger);
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.octaveIndex !== this.state.octaveIndex) {
+      return this.setOctaveKeys();
+    }
   }
 
-  setKeys() {
+  setEnabledKeys() {
+    this.enabledKeys = objectValues(KeyCodeMapping);
+  }
+
+  get octave() {
+    return Octaves[this.state.octaveIndex];
+  }
+
+  setOctaveIndex = octaveIndex => {
+    this.disconnectAllOctave();
+    return this.setState({ octaveIndex });
+  }
+
+  setOctaveKeys() {
     return this.setState({
-      keys: this.KEYS.reduce((keys, key) => {
+      keys: this.octave.reduce((keys, key, index) => {
         const oscillator = this.props.audioContext.context.createOscillator();
         oscillator.type = this.state.waveform;
+        console.log(key, key.frequency)
         oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.context.currentTime);
         oscillator.start();
 
-        keys[key.trigger] = {
+        const triggerKeyCode = KeyCodeMapping[key.note];
+
+        keys[triggerKeyCode] = {
+          index,
+          triggerKeyCode,
           oscillator,
           isPressed: false,
-          trigger: key.trigger
+          sharp: key.sharp,
+          frequency: key.frequency,
         };
 
         return keys;
       }, {})
     });
   }
+
   bindKeyboardEvents(e) {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
   }
 
-  connectOscillator = trigger => {
+  disconnectAllOctave() {
+    objectValues(this.state.keys).forEach(key => key.oscillator.disconnect());
+  }
+
+  connectOscillator = triggerKeyCode => {
     this.setState(
       {
         keys: {
           ...this.state.keys,
-          [trigger]: {
-            ...this.state.keys[trigger],
+          [triggerKeyCode]: {
+            ...this.state.keys[triggerKeyCode],
             isPressed: true
           }
         }
       },
       () => {
-        this.state.keys[trigger].oscillator.connect(this.props.audioContext.context.destination);
+        this.state.keys[triggerKeyCode].oscillator.connect(this.props.audioContext.context.destination);
       }
     );
   };
 
-  disconnectOscillator = trigger => {
+  disconnectOscillator = triggerKeyCode => {
     this.setState(
       {
         keys: {
           ...this.state.keys,
-          [trigger]: {
-            ...this.state.keys[trigger],
+          [triggerKeyCode]: {
+            ...this.state.keys[triggerKeyCode],
             isPressed: false
           }
         }
       },
       () => {
-        this.state.keys[trigger].oscillator.disconnect();
+        this.state.keys[triggerKeyCode].oscillator.disconnect();
       }
     );
   };
 
   onKeyDown = e => {
-    if (!this.keyMap.includes(e.key)) return;
-    return this.connectOscillator(e.key);
+    if (!this.enabledKeys.includes(e.keyCode)) return;
+    return this.connectOscillator(e.keyCode);
   };
 
   onKeyUp = e => {
-    if (!this.keyMap.includes(e.key)) return;
-    return this.disconnectOscillator(e.key);
+    if (!this.enabledKeys.includes(e.keyCode)) return;
+    return this.disconnectOscillator(e.keyCode);
   };
 
-  KEYS = [
-    {
-      trigger: 'a',
-      frequency: 440
-    },
-    {
-      trigger: 's',
-      frequency: 466.1638
-    },
-    {
-      trigger: 'd',
-      frequency: 493.8833
-    },
-    {
-      trigger: 'f',
-      frequency: 523.2511
-    },
-    {
-      trigger: 'g',
-      frequency: 554.3653
-    },
-    {
-      trigger: 'h',
-      frequency: 587.3295
-    },
-    {
-      trigger: 'j',
-      frequency: 622.254
-    },
-    {
-      trigger: 'k',
-      frequency: 659.2551
-    },
-    {
-      trigger: 'l',
-      frequency: 698.4565
-    },
-    {
-      trigger: ';',
-      frequency: 739.9888
-    },
-    {
-      trigger: "'",
-      frequency: 783.9909
-    },
-    {
-      trigger: ']',
-      frequency: 830.6094
-    }
-  ];
-
   get keys() {
-    return objectValues(this.state.keys);
+    return objectValues(this.state.keys).sort((a, b) => { return a.index - b.index });
   }
 
   render() {
     return (
-      <SynthesizerActionsProvider value={{ pressKey: this.connectOscillator, releaseKey: this.disconnectOscillator }}>
-        <div className="border-gray p1_5 inline-block">
-          <Header />
-          <Keys keys={this.keys} />
-        </div>
-      </SynthesizerActionsProvider>
+      <SynthesizerStateProvider value={{ octaveIndex: this.state.octaveIndex }}>
+        <SynthesizerActionsProvider value={{ pressKey: this.connectOscillator, releaseKey: this.disconnectOscillator, setOctaveIndex: this.setOctaveIndex }}>
+          <div className="border-gray p1_5 inline-block">
+            <Header />
+            <Keys keys={this.keys} />
+            <Controls />
+          </div>
+        </SynthesizerActionsProvider>
+      </SynthesizerStateProvider>
     );
   }
 }
@@ -173,6 +158,48 @@ class Header extends Component<HeaderProps> {
   }
 }
 
+
+type ControlsProps = {};
+
+class ControlsRaw extends Component<ControlsProps> {
+
+  render() {
+    return (
+      <div className='Controls flex justify-between mt2'>
+        <OctaveSelector onChange={this.props.synthesizerActions.setOctaveIndex} value={this.props.synthesizerState.octaveIndex} />
+      </div>
+    );
+  }
+}
+
+export const Controls = withSynthesizerState(withSynthesizerActions(ControlsRaw));
+
+
+type OctaveSelectorProps = {};
+
+class OctaveSelector extends Component<OctaveSelectorProps> {
+  onChange = e => this.props.onChange(e.target.value);
+
+  render() {
+    return (
+      <div className='h100 relative'>
+        <input
+          className='Input h100 inner-shadow'
+          onChange={this.onChange}
+          value={this.props.value}
+          type="number"
+          max={Octaves.length - 1}
+          min={0}
+        />
+        <span className='detail color-gray overlay events-none flex justify-end items-center pr2'>
+          OCTAVE
+        </span>
+      </div>
+    )
+  }
+}
+
+
 type KeysProps = {};
 
 class Keys extends Component<KeysProps> {
@@ -181,7 +208,7 @@ class Keys extends Component<KeysProps> {
       <div className="flex">
         {this.props.keys.map((key, index) => {
           const isLastKey = index === this.props.keys.length - 1;
-          return <Key keyObj={key} isLastKey={isLastKey} />;
+          return <Key keyObj={key} isLastKey={isLastKey} key={key.triggerKeyCode} />;
         })}
       </div>
     );
@@ -200,11 +227,11 @@ class KeyRaw extends Component<KeyProps> {
   }
 
   pressKey = () => {
-    this.props.synthesizerActions.pressKey(this.props.keyObj.trigger);
+    this.props.synthesizerActions.pressKey(this.props.keyObj.triggerKeyCode);
   };
 
   releaseKey = () => {
-    this.props.synthesizerActions.releaseKey(this.props.keyObj.trigger);
+    this.props.synthesizerActions.releaseKey(this.props.keyObj.triggerKeyCode);
   };
 
   render() {
