@@ -224,7 +224,7 @@ class BpmSelector extends Component<BpmSelectorProps> {
   render() {
     return (
       <div className='h100 relative'>
-        <input className='Input h100 inner-shadow' onChange={this.onChange} value={this.props.value} type="number" />
+        <input className='Input h100 inner-shadow' onChange={this.onChange} value={this.props.value} type='number' min='1' max='999' />
         <span className='detail color-gray overlay events-none flex justify-end items-center pr2'>
           BPM
         </span>
@@ -324,7 +324,7 @@ class SequenceKeyRaw extends Component<SequenceKeyProps> {
   }
 
   get classes() {
-    return cx('SequenceKey mr_5 border-radius', {
+    return cx('Key mr_5 border-radius', {
       'drop-shadow': !this.on,
       'inner-shadow': this.on,
       'bg-color-white': !this.active,

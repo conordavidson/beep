@@ -14,11 +14,31 @@
   cursor: pointer;
 }
 
-.SequenceKey {
+.Keyboard {
+  height: 143px;
+}
+
+.Key {
+  position: relative;
   height: 50px;
   width: 30px;
   transition: all 0.07s ease-in-out;
   cursor: pointer;
+
+  &--large {
+    height: 70px;
+    width: 40px;
+    border-radius: 20px;
+  }
+
+  &--sharp {
+    position: absolute;
+  }
+
+  &--regular {
+    position: relative;
+    top: 73px;
+  }
 }
 
 .Input {
@@ -28,6 +48,31 @@
   padding-left: 25px;
   padding-right: 15px;
   border: none;
+
+  &--small {
+    width: 150px;
+  }
+}
+
+.Select {
+  width: 220px;
+  border-radius: 15px;
+  font-size: 14px;
+  padding-left: 25px;
+  padding-right: 15px;
+  border: none;
+  background-color: color('white');
+  appearance: none;
+  cursor: pointer;
+  transition: color 0.08s ease-in-out;
+
+  &--small {
+    width: 150px;
+  }
+
+  &:hover {
+    color: color('gray');
+  }
 }
 
 .StatusIndicator__Container {

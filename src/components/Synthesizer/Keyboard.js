@@ -14,6 +14,11 @@ const GSHARP = 'GSHARP';
 
 export const DEFAULT_OCTIVE_INDEX = 3;
 
+export const SINE = 'sine';
+export const SQUARE = 'square';
+export const SAWTOOTH = 'sawtooth';
+export const TRIANGLE = 'triangle';
+
 export const KeyCodeMapping = {
   [C]: 65,
   [CSHARP]: 87,

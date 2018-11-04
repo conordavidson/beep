@@ -9,7 +9,15 @@ import {
 } from 'components/Synthesizer/SynthesizerContext';
 import cx from 'classnames';
 import objectValues from 'utils/objectValues';
-import { Octaves, KeyCodeMapping, DEFAULT_OCTIVE_INDEX } from 'components/Synthesizer/Keyboard';
+import {
+  Octaves,
+  KeyCodeMapping,
+  DEFAULT_OCTIVE_INDEX,
+  SINE,
+  SQUARE,
+  SAWTOOTH,
+  TRIANGLE
+} from 'components/Synthesizer/Keyboard';
 
 class Synthesizer extends Component<SynthesizerProps> {
   constructor(props) {
@@ -18,7 +26,7 @@ class Synthesizer extends Component<SynthesizerProps> {
 
   state = {
     octaveIndex: DEFAULT_OCTIVE_INDEX,
-    waveform: 'sine',
+    waveform: SINE,
     keys: {}
   };
 
@@ -47,12 +55,16 @@ class Synthesizer extends Component<SynthesizerProps> {
     return this.setState({ octaveIndex });
   }
 
+  setWaveform = waveform => {
+    objectValues(this.state.keys).forEach(key => { key.oscillator.type = waveform });
+    return this.setState({ waveform });
+  }
+
   setOctaveKeys() {
     return this.setState({
       keys: this.octave.reduce((keys, key, index) => {
         const oscillator = this.props.audioContext.context.createOscillator();
         oscillator.type = this.state.waveform;
-        console.log(key, key.frequency)
         oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.context.currentTime);
         oscillator.start();
 
@@ -131,11 +143,16 @@ class Synthesizer extends Component<SynthesizerProps> {
 
   render() {
     return (
-      <SynthesizerStateProvider value={{ octaveIndex: this.state.octaveIndex }}>
-        <SynthesizerActionsProvider value={{ pressKey: this.connectOscillator, releaseKey: this.disconnectOscillator, setOctaveIndex: this.setOctaveIndex }}>
+      <SynthesizerStateProvider value={{ octaveIndex: this.state.octaveIndex, waveform: this.state.waveform }}>
+        <SynthesizerActionsProvider value={{
+          pressKey: this.connectOscillator,
+          releaseKey: this.disconnectOscillator,
+          setOctaveIndex: this.setOctaveIndex,
+          setWaveform: this.setWaveform
+        }}>
           <div className="border-gray p1_5 inline-block">
             <Header />
-            <Keys keys={this.keys} />
+            <Keyboard keys={this.keys} />
             <Controls />
           </div>
         </SynthesizerActionsProvider>
@@ -166,7 +183,12 @@ class ControlsRaw extends Component<ControlsProps> {
   render() {
     return (
       <div className='Controls flex justify-between mt2'>
-        <OctaveSelector onChange={this.props.synthesizerActions.setOctaveIndex} value={this.props.synthesizerState.octaveIndex} />
+        <div className='mr1_5'>
+          <WaveformSelector onChange={this.props.synthesizerActions.setWaveform} value={this.props.synthesizerState.waveform} />
+        </div>
+        <div>
+          <OctaveSelector onChange={this.props.synthesizerActions.setOctaveIndex} value={this.props.synthesizerState.octaveIndex} />
+        </div>
       </div>
     );
   }
@@ -184,7 +206,7 @@ class OctaveSelector extends Component<OctaveSelectorProps> {
     return (
       <div className='h100 relative'>
         <input
-          className='Input h100 inner-shadow'
+          className='Input Input--small h100 inner-shadow'
           onChange={this.onChange}
           value={this.props.value}
           type="number"
@@ -200,16 +222,43 @@ class OctaveSelector extends Component<OctaveSelectorProps> {
 }
 
 
-type KeysProps = {};
 
-class Keys extends Component<KeysProps> {
+type WaveformSelectorProps = {};
+
+class WaveformSelector extends Component<WaveformSelectorProps> {
+  onChange = e => this.props.onChange(e.target.value);
+
   render() {
     return (
-      <div className="flex">
-        {this.props.keys.map((key, index) => {
-          const isLastKey = index === this.props.keys.length - 1;
-          return <Key keyObj={key} isLastKey={isLastKey} key={key.triggerKeyCode} />;
-        })}
+      <div className='h100 relative'>
+        <span className='detail color-gray overlay events-none flex justify-end items-center pr1'>
+          WAVEFORM
+        </span>
+
+        <select className='Select h100 inner-shadow' onChange={this.onChange} value={this.props.value}>
+          <option value={SINE}>SINE</option>
+          <option value={SQUARE}>SQUARE</option>
+          <option value={SAWTOOTH}>SAWTOOTH</option>
+          <option value={TRIANGLE}>TRIANGLE</option>
+        </select>
+      </div>
+    )
+  }
+}
+
+
+type KeyboardProps = {};
+
+class Keyboard extends Component<KeyboardProps> {
+  render() {
+    return (
+      <div className='Keyboard text-center'>
+        <div className='inline-flex relative'>
+          {this.props.keys.map((key, index) => {
+            const isLastKey = index === this.props.keys.length - 1;
+            return <Key keyObj={key} isLastKey={isLastKey} key={key.triggerKeyCode} />;
+          })}
+        </div>
       </div>
     );
   }
@@ -219,10 +268,12 @@ type KeyProps = {};
 
 class KeyRaw extends Component<KeyProps> {
   get classes() {
-    return cx('SequenceKey bg-color-white border-radius', {
+    return cx('Key Key--large bg-color-white border-radius', {
       mr_5: !this.props.isLastKey,
       'drop-shadow': !this.props.keyObj.isPressed,
-      'inner-shadow': this.props.keyObj.isPressed
+      'inner-shadow': this.props.keyObj.isPressed,
+      'Key--sharp': this.props.keyObj.sharp,
+      'Key--regular': !this.props.keyObj.sharp
     });
   }
 
@@ -235,12 +286,23 @@ class KeyRaw extends Component<KeyProps> {
   };
 
   render() {
+
+    let leftPosition = 'auto';
+    if (this.props.keyObj.sharp) {
+      if (this.props.keyObj.index > 4) {
+        leftPosition = (this.props.keyObj.index * 24) + 24;
+      } else {
+        leftPosition = this.props.keyObj.index * 24;
+      }
+    }
+
     return (
       <div
         className={this.classes}
         onMouseDown={this.pressKey}
         onMouseUp={this.releaseKey}
         onMouseOut={this.releaseKey}
+        style={{ left: leftPosition }}
       />
     );
   }
