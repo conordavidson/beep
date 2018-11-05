@@ -324,7 +324,7 @@ class SequenceKeyRaw extends Component<SequenceKeyProps> {
   }
 
   get classes() {
-    return cx('Key mr_5 border-radius', {
+    return cx('Key mr_375 border-radius', {
       'drop-shadow': !this.on,
       'inner-shadow': this.on,
       'bg-color-white': !this.active,
