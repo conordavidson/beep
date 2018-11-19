@@ -1,7 +1,6 @@
 /* @flow */
 import React, { Component } from 'react';
 import { withSoundBank } from 'components/SoundBank/SoundBankContext';
-import { withAudioContext } from 'components/Context/AudioContextContext';
 import {
   DrumMachineActionsProvider,
   DrumMachineStateProvider,
@@ -28,7 +27,7 @@ class DrumMachine extends Component<Props, State> {
   SEQUENCE_LENGTH = 16;
 
   deriveTracksFromSoundBank = (): RhythmTracks => {
-    const soundBank: SoundBank = this.props.soundBank;
+    const soundBank: SoundBank = this.props.soundBank.sounds;
     return objectValues(soundBank).reduce((tracks: RhythmTracks, sound: Sound) => {
       tracks[sound.id] = {
         soundId: sound.id,
@@ -90,7 +89,7 @@ class DrumMachine extends Component<Props, State> {
 
     this.tracksAsArray.forEach(track => {
       if (track.sequence[noteIndex]) {
-        this.props.audioContext.playSound(track.soundId);
+        this.props.soundBank.playSound(track.soundId);
       }
     });
 
@@ -131,7 +130,7 @@ class DrumMachine extends Component<Props, State> {
   }
 }
 
-export default withAudioContext(withSoundBank(DrumMachine));
+export default withSoundBank(DrumMachine);
 
 
 type HeaderProps = {};
@@ -260,7 +259,7 @@ type TrackProps = {
 
 class TrackRaw extends Component<TrackProps> {
   get soundName() {
-    return this.props.soundBank[this.props.track.soundId].name;
+    return this.props.soundBank.sounds[this.props.track.soundId].name;
   }
 
   onSequenceKeyClick = () => (noteIndex: number, value: number) => {
@@ -269,7 +268,7 @@ class TrackRaw extends Component<TrackProps> {
 
   render() {
     return (
-      <div className='mb1_5'>
+      <div className='mb1_5 text-left'>
         <div className='mb_5'>{this.soundName}</div>
         <TrackSequence sequence={this.props.track.sequence} onClickKey={this.onSequenceKeyClick()} />
       </div>
@@ -324,7 +323,7 @@ class SequenceKeyRaw extends Component<SequenceKeyProps> {
   }
 
   get classes() {
-    return cx('Key mr_5 border-radius', {
+    return cx('Key mr_375 border-radius', {
       'drop-shadow': !this.on,
       'inner-shadow': this.on,
       'bg-color-white': !this.active,
