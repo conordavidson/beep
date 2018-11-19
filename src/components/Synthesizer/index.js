@@ -20,11 +20,9 @@ import {
   TRIANGLE
 } from 'components/Synthesizer/Keyboard';
 
-class Synthesizer extends Component<SynthesizerProps> {
-  constructor(props) {
-    super(props);
-  }
+const MIXER_INPUT_ID = 'Synthesizer';
 
+class Synthesizer extends Component<SynthesizerProps> {
   state = {
     octaveIndex: DEFAULT_OCTIVE_INDEX,
     waveform: SINE,
@@ -67,13 +65,13 @@ class Synthesizer extends Component<SynthesizerProps> {
 
       const updatedKeys = await keysPromise; // Awaits and unpacks the previous promise.
 
-      const oscillator = this.props.audioContext.context.createOscillator();
+      const oscillator = this.props.audioContext.createOscillator();
       oscillator.type = this.state.waveform;
-      oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.context.currentTime);
+      oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.currentTime);
       oscillator.start();
 
       const triggerKeyCode = KeyCodeMapping[key.note];
-      const mixerInput = await this.props.mixer.createInput('synthesizer'); // Returns a promise and must be awaited.
+      const mixerInput = await this.props.mixer.createInput(MIXER_INPUT_ID); // Returns a promise and must be awaited.
 
       updatedKeys[triggerKeyCode] = {
         index,

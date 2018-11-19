@@ -20,8 +20,8 @@ class Mixer extends Component<MixerProps, MixerState> {
     // This is made async so that you can map multiple sources to one input in a loop. Otherwise we can't trust
     // trust the resuls of setState given that it is async.
     return new Promise(resolve => {
-      const gainNode = this.props.audioContext.context.createGain();
-      gainNode.connect(this.props.audioContext.context.destination);
+      const gainNode = this.props.audioContext.createGain();
+      gainNode.connect(this.props.audioContext.destination);
       const inputExists = !!this.state.inputs[inputId];
 
       if (inputExists) {
@@ -43,7 +43,7 @@ class Mixer extends Component<MixerProps, MixerState> {
         );
       } else {
         gainNode.gain.value = GAIN_INITIAL_VALUE;
-        const constantNode = this.props.audioContext.context.createConstantSource();
+        const constantNode = this.props.audioContext.createConstantSource();
         constantNode.connect(gainNode.gain);
         constantNode.start();
 
@@ -87,7 +87,7 @@ class Mixer extends Component<MixerProps, MixerState> {
           createInput: this.createInput,
           updateInputGain: this.updateInputGain
         }}>
-        <div className="border-gray p1_5 inline-block">
+        <div className="border-gray p1_5 inline-block text-left">
           <Header />
           <Controls />
         </div>
@@ -120,9 +120,12 @@ class ControlsRaw extends Component<ControlsProps> {
 
   render() {
     return (
-      <div className="Controls justify-between mt2">
+      <div className="mt2">
         {this.inputsAsArray.map(input => (
-          <Slider value={input.gain} updateValue={gain => this.props.mixer.updateInputGain(input.id, gain)} />
+          <div key={input.id}>
+            <p>{input.id}</p>
+            <Slider value={input.gain} updateValue={gain => this.props.mixer.updateInputGain(input.id, gain)} />
+          </div>
         ))}
       </div>
     );
@@ -139,6 +142,16 @@ class Slider extends Component<SliderProps> {
   };
 
   render() {
-    return <input type="range" min="0.0" max="1.0" step="0.01" value={this.props.value} onChange={this.handleChange} />;
+    return (
+      <input
+        type="range"
+        min="0.0"
+        max="1.0"
+        step="0.01"
+        value={this.props.value}
+        onChange={this.handleChange}
+        style={{ width: 500 }}
+      />
+    );
   }
 }
