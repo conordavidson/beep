@@ -9,7 +9,7 @@ type MixerProps = {};
 
 type MixerState = {};
 
-const GAIN_INITIAL_VALUE = 0.5;
+const GAIN_INITIAL_VALUE = 1;
 
 class Mixer extends Component<MixerProps, MixerState> {
   state = {
@@ -143,15 +143,18 @@ class Slider extends Component<SliderProps> {
 
   render() {
     return (
-      <input
-        type="range"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={this.props.value}
-        onChange={this.handleChange}
-        style={{ width: 500 }}
-      />
+      <div className="w100">
+        <input
+          className="Slider"
+          type="range"
+          min="0.0"
+          max="1.0"
+          step="0.01"
+          value={this.props.value}
+          onChange={this.handleChange}
+          style={{ width: 500 }}
+        />
+      </div>
     );
   }
 }
