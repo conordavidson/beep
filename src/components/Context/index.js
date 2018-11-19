@@ -4,6 +4,7 @@ import { AudioContextProvider } from 'components/Context/AudioContextContext';
 import { SoundBankProvider } from 'components/SoundBank/SoundBankContext';
 import DrumMachine from 'components/DrumMachine';
 import Synthesizer from 'components/Synthesizer';
+import Mixer from 'components/Mixer';
 
 type Props = {};
 type State = {
@@ -55,7 +56,6 @@ class Context extends Component<Props, State> {
 
   playSound = (soundId: string) => {
     return this.playBuffer(this.soundBank[soundId].buffer);
-    // return source[source.start ? 'start' : 'noteOn'](time);
   }
 
   playBuffer = (buffer: AudioBuffer) => {
@@ -63,7 +63,6 @@ class Context extends Component<Props, State> {
     source.buffer = buffer;
     source.connect(this.audioContext.destination);
     source.start(0);
-    // return source[source.start ? 'start' : 'noteOn'](time);
   }
 
   render() {
@@ -74,13 +73,17 @@ class Context extends Component<Props, State> {
         context: this.audioContext
       }}>
         <SoundBankProvider value={this.soundBank}>
-          <div className='flex justify-center mt4'>
-            <div className='mr2'>
-              <Synthesizer />
-            </div>
-            <div>
-              <DrumMachine />
-            </div>
+          <div className='text-center mt4'>
+            <Mixer>
+              <div className='flex justify-center mt2'>
+                <div className='mr2'>
+                  <Synthesizer />
+                </div>
+                <div>
+                  <DrumMachine />
+                </div>
+              </div>
+            </Mixer>
           </div>
         </SoundBankProvider>
       </AudioContextProvider>

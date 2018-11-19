@@ -1,6 +1,7 @@
 /* @flow */
 import React, { Component } from 'react';
 import { withAudioContext } from 'components/Context/AudioContextContext';
+import { withMixer } from 'components/Mixer/MixerContext';
 import {
   SynthesizerActionsProvider,
   SynthesizerStateProvider,
@@ -60,28 +61,34 @@ class Synthesizer extends Component<SynthesizerProps> {
     return this.setState({ waveform });
   }
 
-  setOctaveKeys() {
-    return this.setState({
-      keys: this.octave.reduce((keys, key, index) => {
-        const oscillator = this.props.audioContext.context.createOscillator();
-        oscillator.type = this.state.waveform;
-        oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.context.currentTime);
-        oscillator.start();
+  async setOctaveKeys() {
+    // We create an async reduce here given that this.props.mixer.createInput returns a Promise.
+    const keys = await this.octave.reduce(async (keysPromise, key, index) => {
 
-        const triggerKeyCode = KeyCodeMapping[key.note];
+      const updatedKeys = await keysPromise; // Awaits and unpacks the previous promise.
 
-        keys[triggerKeyCode] = {
-          index,
-          triggerKeyCode,
-          oscillator,
-          isPressed: false,
-          sharp: key.sharp,
-          frequency: key.frequency,
-        };
+      const oscillator = this.props.audioContext.context.createOscillator();
+      oscillator.type = this.state.waveform;
+      oscillator.frequency.setValueAtTime(key.frequency, this.props.audioContext.context.currentTime);
+      oscillator.start();
 
-        return keys;
-      }, {})
-    });
+      const triggerKeyCode = KeyCodeMapping[key.note];
+      const mixerInput = await this.props.mixer.createInput('synthesizer'); // Returns a promise and must be awaited.
+
+      updatedKeys[triggerKeyCode] = {
+        index,
+        triggerKeyCode,
+        oscillator,
+        mixerInput,
+        isPressed: false,
+        sharp: key.sharp,
+        frequency: key.frequency,
+      };
+
+      return updatedKeys;
+    }, Promise.resolve({}));
+
+    return this.setState({ keys });
   }
 
   bindKeyboardEvents(e) {
@@ -105,7 +112,7 @@ class Synthesizer extends Component<SynthesizerProps> {
         }
       },
       () => {
-        this.state.keys[triggerKeyCode].oscillator.connect(this.props.audioContext.context.destination);
+        this.state.keys[triggerKeyCode].oscillator.connect(this.state.keys[triggerKeyCode].mixerInput);
       }
     );
   };
@@ -161,7 +168,7 @@ class Synthesizer extends Component<SynthesizerProps> {
   }
 }
 
-export default withAudioContext(Synthesizer);
+export default withMixer(withAudioContext(Synthesizer));
 
 type HeaderProps = {};
 
